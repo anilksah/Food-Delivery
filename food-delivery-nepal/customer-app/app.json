@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "Food Delivery Customer",
+    "slug": "food-delivery-customer",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#FF6B35"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.fooddelivery.customer",
+      "permissions": ["INTERNET"]
+    }
+  }
+}

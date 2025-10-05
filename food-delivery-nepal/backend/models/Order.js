@@ -24,7 +24,8 @@ const orderSchema = new mongoose.Schema({
     },
     quantity: {
       type: Number,
-      required: true
+      required: true,
+      min: 1
     },
     price: {
       type: Number,
@@ -35,6 +36,10 @@ const orderSchema = new mongoose.Schema({
   totalAmount: {
     type: Number,
     required: true
+  },
+  deliveryFee: {
+    type: Number,
+    default: 60
   },
   deliveryAddress: {
     type: {
@@ -64,24 +69,40 @@ const orderSchema = new mongoose.Schema({
     enum: ['pending', 'paid', 'failed', 'refunded'],
     default: 'pending'
   },
+  transactionId: String,
   deliveryPartner: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   },
   estimatedDelivery: Date,
-  specialInstructions: String
+  actualDelivery: Date,
+  specialInstructions: String,
+  cancellationReason: String,
+  rating: {
+    type: Number,
+    min: 1,
+    max: 5
+  },
+  review: String
 }, {
   timestamps: true
 });
 
-// Generate order ID before saving
+// FIXED: Generate unique order ID with random component
 orderSchema.pre('save', async function(next) {
   if (this.isNew) {
     const date = new Date();
     const timestamp = date.getTime();
-    this.orderId = `ORD${timestamp}`;
+    const random = Math.random().toString(36).substr(2, 5).toUpperCase();
+    this.orderId = `ORD${timestamp}${random}`;
   }
   next();
 });
+
+// Indexes for better performance
+orderSchema.index({ customer: 1, createdAt: -1 });
+orderSchema.index({ restaurant: 1, status: 1, createdAt: -1 });
+orderSchema.index({ deliveryPartner: 1, status: 1 });
+orderSchema.index({ orderId: 1 });
 
 module.exports = mongoose.model('Order', orderSchema);

@@ -1,42 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Alert
+  Alert,
+  ActivityIndicator
 } from 'react-native';
-import api from '../services/api';
+import { useDispatch, useSelector } from 'react-redux';
+import { login } from '../redux/slices/authSlice';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const dispatch = useDispatch();
+  const { loading, error, isAuthenticated } = useSelector(state => state.auth);
 
-  const handleLogin = async () => {
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigation.replace('Home');
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Login Failed', error);
+    }
+  }, [error]);
+
+  const handleLogin = () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please enter both email and password');
       return;
     }
 
-    setIsLoading(true);
-
-    try {
-      const response = await api.post('/auth/login', { email, password });
-
-      // Save token (in a real app, use secure storage)
-      // For now, we'll just log it
-      console.log('Login successful, token:', response.data.token);
-
-      // Navigate to home
-      navigation.replace('Home');
-    } catch (error) {
-      console.error('Login error:', error);
-      Alert.alert('Error', 'Login failed. Please check your credentials.');
-    } finally {
-      setIsLoading(false);
-    }
+    dispatch(login({ email, password }));
   };
 
   return (
@@ -51,6 +50,7 @@ export default function LoginScreen({ navigation }) {
         onChangeText={setEmail}
         keyboardType="email-address"
         autoCapitalize="none"
+        editable={!loading}
       />
 
       <TextInput
@@ -59,24 +59,25 @@ export default function LoginScreen({ navigation }) {
         value={password}
         onChangeText={setPassword}
         secureTextEntry
+        editable={!loading}
       />
 
       <TouchableOpacity
-        style={[
-          styles.loginButton,
-          isLoading && styles.loginButtonDisabled
-        ]}
+        style={[styles.loginButton, loading && styles.loginButtonDisabled]}
         onPress={handleLogin}
-        disabled={isLoading}
+        disabled={loading}
       >
-        <Text style={styles.loginButtonText}>
-          {isLoading ? 'Logging in...' : 'Login'}
-        </Text>
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.loginButtonText}>Login</Text>
+        )}
       </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.registerLink}
         onPress={() => navigation.navigate('Register')}
+        disabled={loading}
       >
         <Text style={styles.registerText}>
           Don't have an account? Register here
@@ -113,6 +114,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1,
     borderColor: '#e9ecef',
+    fontSize: 16,
   },
   loginButton: {
     backgroundColor: '#FF6B35',
